@@ -58,6 +58,9 @@ function buildTimetablePermutationsForModule(module)
         var currentClassNumber = "" //group class number timeslots w same timetable lessontype together
                 for (var i = 0; i < timetable.length; i++)
                 {
+                        timetable[i]["ModuleCode"] = module["ModuleCode"];
+                        timetable[i]["ExamDate"] = module["ExamDate"];
+
                         if (timetable[i]["LessonType"] != currentLessonType)
                         {
                                 //reset the current lesson type and push the timetable list to the overall list
@@ -107,16 +110,20 @@ function buildTimetablePermutationsForModule(module)
                 }
         //last push for modules that haven't been added
         overallLessonTypeModList.push(currentLessonTypeModList);
-
+        
 
         //logging
-        //console.log("Overall LessonType Mod List for Module " + module["ModuleCode"] + ": ");
-        //console.log(overallLessonTypeModList);
+        console.log("Overall LessonType Mod List for Module " + module["ModuleCode"] + ": ");
+        console.log(overallLessonTypeModList);
 
         //permutate all possible combinations within the module
+        
         var allPermutations = cartesian.apply(this, overallLessonTypeModList);
         //console.log("All permutations: ");
         //console.log(allPermutations);
+        
+        
+
         return allPermutations;
 }
 
@@ -127,7 +134,7 @@ function cartesian() {
         ////console.log("Cartesian Arguments: ");
         ////console.log(arg);
 
-        function helper(arr, i) {
+        function helper(arr, i){ 
                 for (var j=0, l=arg[i].length; j<l; j++) {
                         var a = arr.slice(0); // clone arr
                         a.push(arg[i][j]);
@@ -136,9 +143,9 @@ function cartesian() {
                         else
                                 helper(a, i+1);
                 }
-        }
-        helper([], 0);
-        return r;
+}
+helper([], 0);
+return r;
 }
 
 //non recursive array flattener
@@ -189,8 +196,8 @@ function eliminateIntermediates(intermediate)
                 }
                 else
                 {
-                    //TODO!
-                 //       var examClash = CheckExamDates(flatten  
+                        //TODO!
+                        //       var examClash = CheckExamDates(flatten  
                 }
 
 
@@ -245,7 +252,7 @@ function buildTimetablePermutationList(computationList)
         var allModulesPermutations = intermediate;
         //console.log("All calculated permutations: ");
         //console.log(allModulesPermutations); 
-        
+
         return allModulesPermutations;
 
 
@@ -311,7 +318,7 @@ completionChecker = setInterval(function()
         //this is the new main executing point
 
         var timetablePermutationList = buildTimetablePermutationList(computationList);
-        
+
         console.log("Final countdown");
         var someshit = eliminateIntermediates(timetablePermutationList);
         console.log(someshit);
