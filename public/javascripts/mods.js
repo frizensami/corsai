@@ -96,7 +96,7 @@ function CheckTimetableClash(TimeSlots) {
 }
 
 // Retrieving the timetable from the function "CheckTimeTableClash"
-var Timetable = CheckTimetableClash(TimeSlots);
+//var Timetable = CheckTimetableClash(TimeSlots);
 
 // Function to give scoring for Free day. It will be 100 if there are any free days and 0 if there are no free days.
 // Weight is a range from 0 to 100. It will be multiplied to the score as a percentage.
