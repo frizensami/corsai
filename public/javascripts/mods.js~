@@ -1,23 +1,18 @@
 // Variables
 var reject = false
 
-var TimeSlots = [{name: "Timeslot6", DayText: "Monday", StartTime: "0000", EndTime: "0200", WeekText:"Every Week"},
-				{name: "Timeslot6", DayText: "Tuesday", StartTime: "0000", EndTime: "0200", WeekText:"Every Week"},
-				{name: "Timeslot1", DayText: "Wednesday", StartTime: "0000", EndTime: "0200", WeekText:"Every Week"},
-				{name: "Timeslot2", DayText: "Wednesday", StartTime: "0400", EndTime: "0600", WeekText:"Every Week"},
-				{name: "Timeslot3", DayText: "Wednesday", StartTime: "0600", EndTime: "0800", WeekText:"Every Week"},
-				{name: "Timeslot4", DayText: "Wednesday", StartTime: "0800", EndTime: "0900", WeekText:"Odd Week"},
-				{name: "Timeslot5", DayText: "Wednesday", StartTime: "0900", EndTime: "1000", WeekText:"Even Week"},
-				{name: "Timeslot5", DayText: "Thursday", StartTime: "0000", EndTime: "0200", WeekText:"Every Week"},
-				{name: "Timeslot7", DayText: "Friday", StartTime: "0000", EndTime: "0200", WeekText:"Every Week"}
+var TimeSlots = [{name: "Timeslot1", DayText: "Wednesday", StartTime: "0000", EndTime: "0200"},
+				{name: "Timeslot2", DayText: "Wednesday", StartTime: "0400", EndTime: "0600"},
+				{name: "Timeslot3", DayText: "Wednesday", StartTime: "0600", EndTime: "0800"},
+				{name: "Timeslot4", DayText: "Wednesday", StartTime: "0800", EndTime: "0900"},
+				{name: "Timeslot5", DayText: "Wednesday", StartTime: "2200", EndTime: "2400"},
+				{name: "Timeslot6", DayText: "Tuesday", StartTime: "1100", EndTime: "1900"}
 				]
 // Take note of the function checkExamDate which requires the dictionary within examDates to be "examDate"
 var ExamDates = [{module: "CS1101S", ExamDate: "2015-11-26T17:00+0800"},
 				{module: "CS1231", ExamDate: "2015-11-25T17:00+0800"},
-				{module: "UTW1001R"},
 				{module: "MA1521", ExamDate: "2015-12-01T09:00+0800"},
-				{module: "MA1521", ExamDate: "2015-13-01T09:00+0800"},
-				{module: "GEM1001"}]
+				{module: "MA1521", ExamDate: "2015-12-01T11:00+0800"}]
 				
 // Function to check if a string is found within an array
 // Returns True if needle is found within the haystack and False if it is not found
@@ -29,22 +24,12 @@ function WithinArray(needle, arrhaystack) {
 // Looping through each date within ExamDates to make sure the Dates don't clash and if the dates do clash, make sure the timings are at least 3h apart.
 // Return False if there are no clashes, and True if there are clashes
 function CheckExamDates(ExamDates) {
-	// NoExamIndex stores the Index of the modules within ExamDates that do not have any exam dates
-	var NoExamIndex = []
 	for (var i = 0; i < ExamDates.length; i++)
 	{
-		if (typeof ExamDates[i]["ExamDate"] == 'undefined' || ExamDates[i]["ExamDate"] == "") 
-		{
-			NoExamIndex.push(i);
-		}
-	}
-	
-	// Go through to the first dictionary in ExamDates and check with the rest for clashes. Repeat by moving down ExamDates list.
-	for (var i = 0; i < ExamDates.length; i++)
-	{
+// CHECK FOR UNDEFINED CASE
 		for (var j = 0; j < ExamDates.length; j++)
 		{
-			if (j == i || WithinArray(j, NoExamIndex) || WithinArray(i, NoExamIndex))
+			if (j == i)
 			{
 				continue;
 			}
@@ -55,7 +40,7 @@ function CheckExamDates(ExamDates) {
 				// If the dates are the same and if the timings are too close to one another (3 hours)
 				if (Math.abs(ExamDates[i]["ExamDate"].slice(11,13) - ExamDates[j]["ExamDate"].slice(11,13)) < 3)
 				{
-					return true;
+					return true
 				}
 			}				
 		}
@@ -81,6 +66,7 @@ function CheckTimetableClash(TimeSlots) {
 		if (WithinArray(TimeToPush, Timetable[TimeSlots[i]["DayText"]])) 
 		{
 // Remember to add in the code that allows you to check if the clashing courses are on Even and Odd weeks
+			//console.log(Timetable)
 			return true;
 		}
 		else 
@@ -92,25 +78,50 @@ function CheckTimetableClash(TimeSlots) {
 			}
 		}
 	}
-	return Timetable;
+	return Timetable
 }
 
-// Retrieving the timetable from the function "CheckTimeTableClash"
 var Timetable = CheckTimetableClash(TimeSlots);
 
-// Function to give scoring for Free day. It will be 100 if there are any free days and 0 if there are no free days.
-// Weight is a range from 0 to 100. It will be multiplied to the score as a percentage.
-function ScoreFreeDay (Timetable1, Weight) {
-	var Score = 0
-	for (var Day in Timetable1)
-	{
-		if (Timetable1[Day].length == 0)
-		{
-			Score = 100;
+console.log(Timetable["Monday"])
+console.log(Timetable["Tuesday"])
+console.log(Timetable["Wednesday"])
+console.log(Timetable["Thursday"])
+console.log(Timetable["Friday"])
+
+var Weight = 40;
+var score;	
+
+function CheckLunchSlot (Timetable3, weight) {
+	
+	var count = 0;
+	// scoreModifier modifies the weightage of the score in proportion to the number of days that have lessons. e.g. 20, 25, 33, 50
+	var scoreModifier = 0;
+	var scoreMultiplier = 0;
+	var lunchSlots = [1100, 1200, 1300];
+	
+	for (var day in Timetable3) {
+		if (Timetable3[day].length == 0)
+			scoreModifier += 1;
+	}
+
+	for (var day in Timetable3) {
+		if (Timetable3[day].length != 0) {
+			for (var a = 0; a < Timetable3[day].length; a++){
+				//if all 3 timeslots are filled 
+				for (var b = 0; b < lunchSlots.length; b++) {
+					if (Timetable3[day][a] == lunchSlots[b])
+						count += 1;
+				}
+			}
+			if (count != 3)
+				scoreMultiplier += (100/(5 - scoreModifier));
+			count = 0;
 		}
 	}
-	return Score * Weight / 100;
-}
 
-//console.log(CheckExamDates(ExamDates));
-//console.log(CheckTimetableClash(TimeSlots));
+	score = scoreMultiplier * (weight / 100);
+	return console.log(score);
+	
+}
+CheckLunchSlot (Timetable, Weight);
