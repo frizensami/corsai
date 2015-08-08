@@ -31,6 +31,18 @@ app.get('/arrange', function(req, res){
        res.render('arrange', { title: "Arranger", message: "Arranging in Progress"}); 
 });
 
+app.get('/checktimetableworker', function(req, res){
+        res.sendFile(__dirname + "/public/javascripts/checktimetable-worker.js");
+});
+
+
+app.get('/buildttpl', function(req, res){
+        res.sendFile(__dirname + "/public/javascripts/buildTTPL-worker.js");
+});
+
+
+
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');

@@ -110,19 +110,19 @@ function buildTimetablePermutationsForModule(module)
                 }
         //last push for modules that haven't been added
         overallLessonTypeModList.push(currentLessonTypeModList);
-        
+
 
         //logging
         console.log("Overall LessonType Mod List for Module " + module["ModuleCode"] + ": ");
         console.log(overallLessonTypeModList);
 
         //permutate all possible combinations within the module
-        
+
         var allPermutations = cartesian.apply(this, overallLessonTypeModList);
         //console.log("All permutations: ");
         //console.log(allPermutations);
-        
-        
+
+
 
         return allPermutations;
 }
@@ -143,9 +143,9 @@ function cartesian() {
                         else
                                 helper(a, i+1);
                 }
-}
-helper([], 0);
-return r;
+        }
+        helper([], 0);
+        return r;
 }
 
 //non recursive array flattener
@@ -304,11 +304,10 @@ $.each(moduleList, function(i, item){
 
 
 //run a function often to check for completion of json retrieval. Deregister it if done.
-completionChecker = setInterval(function()
-                {
-                        //check if all modules are loaded
+completionChecker = setInterval(function(){
+        //check if all modules are loaded
 
-                        if (moduleJsonList.length == moduleList.length)
+        if (moduleJsonList.length == moduleList.length)
 {
         window.clearInterval(completionChecker);
         var computationList = buildComputationList(moduleJsonList);
@@ -317,13 +316,23 @@ completionChecker = setInterval(function()
         //carry on with rest of program
         //this is the new main executing point
 
-        var timetablePermutationList = buildTimetablePermutationList(computationList);
+        //Commenting out to try worker approach
+        //var timetablePermutationList = buildTimetablePermutationList(computationList);
+        
+        var ttplWorker = new Worker('/buildttpl');
+        ttplWorker.addEventListener('message', function(e){
+                console.log("From ttplWorker, final permutation list: ");
+                console.log(e.data);
 
-        console.log("Final countdown");
-        var someshit = eliminateIntermediates(timetablePermutationList);
-        console.log(someshit);
-
-        console.log("PROGRAM HAS ENDED!");
+                console.log("PROGRAM HAS ENDED!");
+        },false);
+        ttplWorker.postMessage(computationList);
+        
+        /* Final pass during testing
+           console.log("Final countdown");
+           var someshit = eliminateIntermediates(timetablePermutationList);
+           console.log(someshit);
+           */
 }
 },1);
 

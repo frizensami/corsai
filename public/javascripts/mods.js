@@ -81,6 +81,7 @@ function CheckTimetableClash(TimeSlots) {
 		if (WithinArray(TimeToPush, Timetable[TimeSlots[i]["DayText"]])) 
 		{
 // Remember to add in the code that allows you to check if the clashing courses are on Even and Odd weeks
+// Note by Sriram: just remembered, this doesn't matter because if it clashes on one week, it's already not viable
 			return true;
 		}
 		else 
