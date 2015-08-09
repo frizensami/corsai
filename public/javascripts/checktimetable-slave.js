@@ -1,47 +1,5 @@
 
 
-//non recursive array flattener
-function flatten(array, mutable) {
-        var toString = Object.prototype.toString;
-        var arrayTypeStr = '[object Array]';
-
-        var result = [];
-        var nodes = (mutable && array) || array.slice();
-        var node;
-
-        if (!array.length) {
-                return result;
-        }
-
-        node = nodes.pop();
-
-        do {
-                if (toString.call(node) === arrayTypeStr) {
-                        nodes.push.apply(nodes, node);
-                } else {
-                        result.push(node);
-                }
-        } while (nodes.length && (node = nodes.pop()) !== undefined);
-
-        result.reverse(); // we reverse result to restore the original order
-        return result;
-}
-
-function flattenIntermediate(intermediate)
-{
-        console.log("Intermediate of length " + intermediate.length + " is being flattened");
-        var retList = [];
-        for (var i = 0; i < intermediate.length; i++)
-        {
-            retList.push(flatten(intermediate[i]));
-        }
-
-        console.log("Intermediate has been flattened");
-
-        return retList;
-}
-
-
 // Function to check if a string is found within an array
 // Returns True if needle is found within the haystack and False if it is not found
 function WithinArray(needle, arrhaystack) {
@@ -104,9 +62,7 @@ self.addEventListener('message', function(e){
     console.log("Worker Started!");    
   
     //copy the working copy from the message args
-    var intermediate = e.data;
-
-    var workingCopy = flattenIntermediate(intermediate);
+    var workingCopy = e.data;
     
     //var numClashes = 0;
     numWorkers = calculateNumWorkers(workingCopy.length);

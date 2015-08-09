@@ -319,14 +319,14 @@ completionChecker = setInterval(function(){
         //Commenting out to try worker approach
         //var timetablePermutationList = buildTimetablePermutationList(computationList);
         
-        var ttplWorker = new Worker('/buildttpl');
-        ttplWorker.addEventListener('message', function(e){
-                console.log("From ttplWorker, final permutation list: ");
+        var BobTheBuilder = new Worker('/buildttpl');
+        BobTheBuilder.addEventListener('message', function(e){
+                console.log("From BobTheBuilder, final permutation list: ");
                 console.log(e.data);
 
                 console.log("PROGRAM HAS ENDED!");
         },false);
-        ttplWorker.postMessage(computationList);
+        BobTheBuilder.postMessage(computationList);
         
         /* Final pass during testing
            console.log("Final countdown");

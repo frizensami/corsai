@@ -380,6 +380,20 @@ function flatten(array, mutable) {
         return result;
 }
 
+function flattenIntermediate(intermediate)
+{
+        console.log("Intermediate of length " + intermediate.length + " is being flattened");
+        var retList = [];
+        for (var i = 0; i < intermediate.length; i++)
+        {
+            retList.push(flatten(intermediate[i]));
+        }
+
+        console.log("Intermediate has been flattened");
+
+        return retList;
+}
+
 function eliminateIntermediates(intermediate)
 {
         //TODO: add exam date clash
@@ -389,7 +403,7 @@ function eliminateIntermediates(intermediate)
         console.log("Incoming Length: " + workingCopy.length);
         for (var i = 0; i < workingCopy.length; i++)
         {
-                var tbClash = CheckTimetableClash(flatten(workingCopy[i]));
+                var tbClash = CheckTimetableClash(workingCopy[i]);
                 // console.log("Flattened copy for analysis: ")
                 // console.log(flatten(workingCopy[i]));
                 if (tbClash == true)
@@ -468,13 +482,108 @@ function buildTimetablePermutationList(computationList)
 
 
 }
+function synchronousWorkerLoop()
+{
+        var bobTheBuilder = new Worker("/checktimetable");
+
+}
+
 
 self.addEventListener('message', function(e){
     console.log("buildTTLP-worker started!");
     var computationList = e.data;
+   
+        //build timetable permutation list function running here under main to make parallelization easier
+        var timetablePermutationList = [];
 
-    var allPermutations = buildTimetablePermutationList(computationList);
-    console.log("Worker Ended!");
-    self.postMessage(allPermutations);
+        for (var i = 0; i < computationList.length; i++)
+        {
+                var permutationList = buildTimetablePermutationsForModule(computationList[i]);
+                timetablePermutationList.push(permutationList);
+        }
+        //console.log("TIMETABLE PERMUTATIONS LIST: ");
+        //console.log(timetablePermutationList);
+
+        //set empty list before permutating all
+        var intermediate = [];
+        //marker variable to tell interval function to carry on with next intermediate
+        var goToNextIntermediate = true;
+        //variable to tell interval function which intermediate to synthesize
+        var curIdx = 0;
+        //
+        var buildTTPLInterval = setInterval(function(){
+            if (curIdx == timetablePermutationList.length - 1)
+            {
+                //we are done, all permutations have been analysed
+                console.log("Worker Ended!");
+                self.postMessage(intermediate);
+            }
+            if (goToNextIntermediate === true)
+            {
+                //prevent function from running while worker is processing
+                goToNextIntermediate = false;            
+                
+                //based on the current index, process the right intermediate
+                if (curIdx == 0)
+                {
+                        var intermediate  = cartesian.apply(this, timetablePermutationList.slice(0, 2));
+                }
+                else
+                {
+                        var intermediate = cartesian(intermediate, timetablePermutationList[curIdx+1]);
+                }
+
+                //spawn the new worker - bob will handle delegation
+                var bobTheBuilder = new Worker('/checktimetableworker');
+                
+                //set the callback before setting him off
+                bobTheBuilder.addEventListener('message', function(e){
+
+                    goToNextIntermediate = true; //signal the next run to be a working run
+                    intermediate = e.data; //set the new intermediate
+                    curIdx++; //increase the index counter for the next run
+                });
+
+                bobTheBuilder.postMessage(intermediate) //send the intermediate to worker for processing.
+            }
+
+            //end the interval and return value if we have combined all intermediates
+
+        }, 10);
+
+
+        /*
+        for (var i = 0; i < timetablePermutationList.length - 1; i++)
+        {
+                if (i == 0)
+                {
+                        var intermediate  = cartesian.apply(this, timetablePermutationList.slice(0, 2));
+                }
+                else
+                {
+                        var intermediate = cartesian(intermediate, timetablePermutationList[i+1]);
+                }
+
+                intermediate = flattenIntermediate(intermediate);
+
+                intermediate = eliminateIntermediates(intermediate);
+
+                var 
+
+                //console.log("Intermediate after flatten and removal: ");
+                //console.log(intermediate);
+        } 
+        */    
+
+        //intermediate = cartesian.apply(this, timetablePermutationList);
+        //var allPermutations = intermediate;
+        //console.log("All calculated permutations: ");
+        //console.log(allModulesPermutations); 
+
+
+    //ENABLE THIS IF STUFF ABOVE DOESN'T WORK
+    //var allPermutations = buildTimetablePermutationList(computationList);
+    //console.log("Worker Ended!");
+    //self.postMessage(allPermutations);
 
 });
