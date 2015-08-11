@@ -175,6 +175,18 @@ function flatten(array, mutable) {
         return result;
 }
 
+//flatten the whole working copy
+function flattenArray(array)
+{
+        var retArray = [];
+        for (var i = 0; i < array.length; i++)
+        {
+            retArray.push(flatten(array[i]));
+        }
+
+        return retArray;
+}
+
 function eliminateIntermediates(intermediate)
 {
         //TODO: add exam date clash
@@ -182,6 +194,24 @@ function eliminateIntermediates(intermediate)
         var workingCopy = intermediate;
         var numClash = 0;
         console.log("Incoming Length: " + workingCopy.length);
+
+
+
+        //flatten the working copy so that map working properly
+        workingCopy = flattenArray(workingCopy);
+
+        //try parallel map version  
+        var clashWorker = new Parallel(workingCopy);
+        clashWorker.map(CheckTimetableClash_Map)
+                .then(function log(data){
+                        console.log("Data from parallel worker: ");
+                        console.log(data);
+                });
+
+
+        
+        return data;
+        /*
         for (var i = 0; i < workingCopy.length; i++)
         {
                 var tbClash = CheckTimetableClash(flatten(workingCopy[i]));
@@ -200,30 +230,53 @@ function eliminateIntermediates(intermediate)
                         //       var examClash = CheckExamDates(flatten  
                 }
 
+                if (i % 1000 == 0)
+                {
+                        console.log("Processed " + i + " cases out of " + workingCopy.length);
+                }
+
 
         }
         console.log("Outgoing length: " + workingCopy.length);
         console.log("Number of clashes: ");
         console.log(numClash);
         return workingCopy;
+        */
 }
+
+function recursiveIntermediate(intermediate, depth)
+{
+    if (depth == 0)
+    {
+            var intermediate  = cartesian.apply(this, timetablePermutationList.slice(0, 2));
+            
+    }
+
+    else
+    {
+        var intermediate = cartesian(intermediate, timetablePermutationList[i+1]);
+    }
+}
+
 
 //generate a list of all possible timetable configurations given the input list to be used for computation
 function buildTimetablePermutationList(computationList)
 {
+        //relatively fast part
         var timetablePermutationList = [];
-
+        
+        //permutate each module to get an overall permutation list
         for (var i = 0; i < computationList.length; i++)
         {
                 var permutationList = buildTimetablePermutationsForModule(computationList[i]);
                 timetablePermutationList.push(permutationList);
         }
-        //console.log("TIMETABLE PERMUTATIONS LIST: ");
-        //console.log(timetablePermutationList);
 
         //permutate all
         var intermediate = [];
 
+/*
+        //slow from here
         for (var i = 0; i < timetablePermutationList.length - 1; i++)
         {
                 if (i == 0)
@@ -254,7 +307,7 @@ function buildTimetablePermutationList(computationList)
         //console.log(allModulesPermutations); 
 
         return allModulesPermutations;
-
+*/
 
 }
 
@@ -311,6 +364,12 @@ completionChecker = setInterval(function(){
 {
         window.clearInterval(completionChecker);
         var computationList = buildComputationList(moduleJsonList);
+        
+        //try paralleljs
+        var p = new Parallel(computationList);
+        console.log(p.data);
+        p.spawn(buildTimetablePermutationList(computationList)).then(function(data){console.log(data)});
+        
         //console.log("Computation List: ");
         //console.log(computationList);
         //carry on with rest of program
@@ -318,7 +377,7 @@ completionChecker = setInterval(function(){
 
         //Commenting out to try worker approach
         //var timetablePermutationList = buildTimetablePermutationList(computationList);
-        
+        /*
         var ttplWorker = new Worker('/buildttpl');
         ttplWorker.addEventListener('message', function(e){
                 console.log("From ttplWorker, final permutation list: ");
@@ -327,7 +386,7 @@ completionChecker = setInterval(function(){
                 console.log("PROGRAM HAS ENDED!");
         },false);
         ttplWorker.postMessage(computationList);
-        
+        */
         /* Final pass during testing
            console.log("Final countdown");
            var someshit = eliminateIntermediates(timetablePermutationList);
