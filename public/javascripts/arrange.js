@@ -180,7 +180,7 @@ function insideTimetable(timetable, timing, day, classNo) {
 function no_clashes_found(timetable, slot) {
     //console.log("timetable");
     //console.log(timetable
-)schnr kschnrk
+
  //check through whole timetable
     for (var i = 0; i < timetable.length; i++) {
         //each timetable item has timings
