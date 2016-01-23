@@ -57,7 +57,6 @@ function produce_timetable(array_of_array_of_mod_objs) {
 		return true;
 	}
 
-	// Insert a module to the timetable array. It will insert to the array[day][time]. The day is based on index (Monday = 0, Tuesday = 1 etc), time too (0800 = 0, 0900 = 1 etc).
 	function insert_module(module, index) {
 		var timetable = module.Timetable[index];
 		var time = timetable.Timings;
@@ -87,14 +86,10 @@ function produce_timetable(array_of_array_of_mod_objs) {
 		//	console.log("BRUTEFORCE");	
 		//} else {
 			for (var i = 0; i < array_of_array_of_mod_objs.length; i++) {
-				// insert modules in random position. After that, shuffle
 				var timing = array_of_array_of_mod_objs[i].Timetable;
 				insert_module(array_of_array_of_mod_objs[i], get_random_index(timing));
-			}
-
-			// this is the time where we shuffle them modules!
-			for (var i = 0; timetable_array
-		//}
+		//	}
+		}
 	}
 	return timetable_array;
 }

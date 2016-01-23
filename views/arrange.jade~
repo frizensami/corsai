@@ -7,4 +7,3 @@ block content
   script(src='./javascripts/combinatorics.js')
   script(src='./javascripts/arrange.js')
   script(src='./javascripts/mods.js')
-  script(src='./javascripts/algo.js')
