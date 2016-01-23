@@ -28,7 +28,7 @@ app.use('/', routes);
 
 
 app.get('/arrange', function(req, res){
-       res.render('arrange', { title: "Arranger", message: "Arranging in Progress"}); 
+       res.render('arrange', { title: "Arranger", message: "Arranging in Progress"});
 });
 
 app.get('/checktimetableworker', function(req, res){

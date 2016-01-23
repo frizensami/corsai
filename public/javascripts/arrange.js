@@ -1,5 +1,37 @@
 var currentYear = "2015-2016";
 
+//function from outside that groups by
+function groupBy( array , f )
+{
+  var groups = {};
+  array.forEach( function( o )
+  {
+    var group = JSON.stringify( f(o) );
+    groups[group] = groups[group] || [];
+    groups[group].push( o );
+  });
+  return Object.keys(groups).map( function( group )
+  {
+    return groups[group];
+  })
+}
+
+function groupByModuleCode(timetable) {
+    return groupBy(timetable, function(item) { return item.ClassNo; });
+}
+
+function groupByLessonType(computationListModule) {
+    //console.log(computationListModule);
+    return groupBy(computationListModule, function(item) { return item.LessonType; });
+}
+
+function groupByClassNo(timetable) {
+    //console.log(computationListModule);
+    return groupBy(timetable, function(item) { return item.ClassNo; });
+}
+
+
+
 
 //util function to access get elements
 function get(name)
@@ -20,9 +52,20 @@ function removeWhitespace(value)
         return value.replace(/ /g,'');
 }
 
+//recieves timetable - which is an array of slots
+//outputs timetable with all self-conflicting slots removed
+function removeRedundantWithinModule(timetable) {
+    var outputTimetable = [];
+
+    var grouped = groupByModuleCode(timetable);
+    console.log(grouped);
+
+}
+
 //builds the required output list of module info to use for computation
 function buildComputationList(moduleJsonList)
 {
+    console.log("Building computation list");
         var computationList = [];
 
         for (var i = 0; i < moduleJsonList.length; i++)
@@ -31,7 +74,11 @@ function buildComputationList(moduleJsonList)
 
                 computationListModule["ModuleCode"] = moduleJsonList[i]["ModuleCode"];
 
-                computationListModule["Timetable"] = moduleJsonList[i]["Timetable"];            
+
+                computationListModule["Timetable"] = moduleJsonList[i]["Timetable"];
+
+                //test group
+                //removeRedundantWithinModule(computationListModule["Timetable"]);
 
                 computationListModule["ExamDate"] =  moduleJsonList[i]["ExamDate"];
 
@@ -41,8 +88,185 @@ function buildComputationList(moduleJsonList)
         }
 
 
-        return computationList;
+        //return a list where each entry is a unique module-lessontype combination, e.g. CS2020 Lab, CS2020 Sectional, but
+        //the lesson is inside the object
+        return splitModulesByLessonType(computationList);
 }
+
+function splitModulesByLessonType(computationList) {
+    console.log("Splitting modules by their lesson types");
+    var newComputationList = [];
+
+    computationList.forEach(function(module) {
+        //console.log(module);
+
+        //gest the timetable slots split by the lessson type
+        var lessonTypes = groupByLessonType(module["Timetable"]);
+
+        //each lessonType is an array of the timetable slots of that lessonType
+        lessonTypes.forEach(function(lessonType) {
+            newComputationList.push({"ModuleCode": module["ModuleCode"], "Timetable": lessonType, "ExamDate": module["ExamDate"]});
+        });
+
+        //newComputationList = newComputationList.concat();
+    });
+    console.log("new computation list after split");
+    console.log(newComputationList);
+
+    console.log("combine same class");
+    return combineSameClassNo(newComputationList);
+    //return filterRedundantTimeslots(newComputationList);
+    //console.log(newComputationList);
+}
+
+//given a timetable, changes startime endtime daytext into Times: [{StartTime: Endtime: DayText:}]
+function combineSameClassNo(newComputationList) {
+    var newerComputationList = [];
+    newComputationList.forEach(function(module_with_type) {
+
+        //recives an array of arrays - each array is a list of the slots required of that ClassNo
+        var groupedSlots = groupByClassNo(module_with_type["Timetable"]);
+
+        var newSlots = [];
+
+        //for each of the slots grouped by the class number
+        groupedSlots.forEach(function(slot_group) {
+            //basic new slot
+            var newSlot = {"ClassNo": slot_group[0]["ClassNo"],
+                           "LessonType": slot_group[0]["LessonType"],
+                           "Venue": slot_group[0]["Venue"],
+                           "WeekText": slot_group[0]["WeekText"]};
+
+            //base timing array
+            var timings = [];
+
+            //for each slot in the group, add their timing to the timing array
+            slot_group.forEach(function(slot) {
+                timings.push({"DayText": slot["DayText"],
+                             "StartTime": slot["StartTime"],
+                             "EndTime": slot["EndTime"]});
+            });
+
+            newSlot["Timings"] = timings;
+            newSlots.push(newSlot);
+        });
+
+        //basic module
+        var module_with_type_and_grouped_slots = {"ModuleCode": module_with_type["ModuleCode"],
+                                                  "ExamDate": module_with_type["ExamDate"],
+                                                  "Timetable": newSlots};
+        newerComputationList.push(module_with_type_and_grouped_slots);
+
+        //compute the timetable slot
+    });
+    console.log("newer comp list");
+    console.log(newerComputationList);
+    return filterRedundantTimeslots(newerComputationList);
+}
+
+function insideTimetable(timetable, timing, day, classNo) {
+    for (var i = 0; i < timetable.length; i++) {
+        if (timetable[i]["StartTime"] == timing &&
+            timetable[i]["DayText"] == day &&
+            timetable[i]["ClassNo"] != classNo) {
+            //^^^^ make sure we don't return true if they're same class number, because they have to be taken together!
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function no_clashes_found(timetable, slot) {
+    //console.log("timetable");
+    //console.log(timetable
+)schnr kschnrk
+ //check through whole timetable
+    for (var i = 0; i < timetable.length; i++) {
+        //each timetable item has timings
+        var timings = timetable[i]["Timings"];
+
+        //use this to keep track of how many clashes we get. Super pseudo science. No more than the num of timings.
+        var clashes = 0;
+
+        //check that for each of the timings of that slot in the timetable
+        for (var j = 0; j < timings.length; j++) {
+            for (var k = 0; k < slot["Timings"].length; k++) {
+                if (timings[j]["StartTime"] == slot["Timings"][k]["StartTime"] &&
+                    timings[j]["DayText"] == slot["Timings"][k]["DayText"] &&
+                    timings[j]["ClassNo"] == slot["Timings"][k]["ClassNo"]) {
+
+                    //increase number of clashes, later check if > timings.lenth
+                    clashes += 1;
+                }
+            }
+        }
+        if (clashes >= timings.length) { return false; } //we have enough clashes to call this slot redundant
+    }
+
+    return true;
+}
+
+//check if module has redundant time slots, aka
+function filterRedundantTimeslots(newerComputationList) {
+
+    var newestComputationList = [];
+
+    //foreach module in the computation list
+    newerComputationList.forEach(function(module_with_baggage) {
+        no_clash_timetable = [];
+
+        //get the timetable for each module
+        module_with_baggage["Timetable"].forEach(function(slot) {
+            if (no_clashes_found(no_clash_timetable, slot)) {
+                no_clash_timetable.push(slot);
+            }
+        });
+
+        //console.log("no clash tb");
+        //console.log(no_clash_timetable);
+        var new_module_with_baggage = {"ModuleCode": module_with_baggage["ModuleCode"],
+                                        "ExamDate": module_with_baggage["ExamDate"],
+                                        "Timetable": no_clash_timetable};
+        newestComputationList.push(new_module_with_baggage);
+    });
+
+    console.log("Newest computation list");
+    console.log(newestComputationList);
+
+    return newestComputationList;
+
+    /*
+    overallComputationList = [];
+
+    //for each module in the computation list
+    computationList.forEach(function(module_with_type) {
+
+        //instantiate a final timetable for that module
+        finalTimetable = [];
+
+        //for each timetable slot - get all unique by start time
+        module_with_type["Timetable"].forEach(function(slot) {
+            //check if this particular slot is inside the timetable already
+            if (!(insideTimetable(finalTimetable, slot["StartTime"], slot["DayText"], slot["ClassNo"]))) {
+                finalTimetable.push(slot);
+            }
+        });
+
+
+        //add these unique slots to the overall timetable
+        overallComputationList = overallComputationList.concat({"ModuleCode": module_with_type["ModuleCode"],
+                                                                "Timetable": finalTimetable,
+                                                                "ExamDate": module_with_type["ExamDate"]});
+
+    });
+
+    console.log("Final tt");
+    console.log(overallComputationList);
+    */
+}
+
+/*
 
 //get all timetable permutations for a single module (w timetable, modulecode & examdate)
 //assumption --> no multiple timetable so no need to permutate that
@@ -50,8 +274,8 @@ function buildTimetablePermutationsForModule(module)
 {
         //first step: split module timetable dictionary into a list of lists of dicts
         //have a internal list of all lesson types in the current module
-        // List 1 - first lesson type: [ 
-        var timetable = module["Timetable"]; 
+        // List 1 - first lesson type: [
+        var timetable = module["Timetable"];
         var currentLessonType = timetable[0]["LessonType"]; //We assume that the timetable lesson types are in order, all of X type first, then Y type next, no mixing. Put the current lesson type as the first one to stop edge cases
         var overallLessonTypeModList = [];
         var currentLessonTypeModList = [];
@@ -81,7 +305,7 @@ function buildTimetablePermutationsForModule(module)
                                 //and append the current timetable slot thing to that element
                                 var thisClassNumber = timetable[i]["ClassNo"];
                                 if (currentClassNumber != thisClassNumber)
-                                {    
+                                {
                                         currentLessonTypeModList.push(timetable[i]);
                                         currentClassNumber = thisClassNumber;
                                 }
@@ -134,7 +358,7 @@ function cartesian() {
         ////console.log("Cartesian Arguments: ");
         ////console.log(arg);
 
-        function helper(arr, i){ 
+        function helper(arr, i){
                 for (var j=0, l=arg[i].length; j<l; j++) {
                         var a = arr.slice(0); // clone arr
                         a.push(arg[i][j]);
@@ -197,7 +421,7 @@ function eliminateIntermediates(intermediate)
                 else
                 {
                         //TODO!
-                        //       var examClash = CheckExamDates(flatten  
+                        //       var examClash = CheckExamDates(flatten
                 }
 
 
@@ -246,18 +470,18 @@ function buildTimetablePermutationList(computationList)
 
                 //console.log("Intermediate after flatten and removal: ");
                 //console.log(intermediate);
-        }     
+        }
 
         //intermediate = cartesian.apply(this, timetablePermutationList);
         var allModulesPermutations = intermediate;
         //console.log("All calculated permutations: ");
-        //console.log(allModulesPermutations); 
+        //console.log(allModulesPermutations);
 
         return allModulesPermutations;
 
 
 }
-
+*/
 //---------------------------MAIN START-----------------------//
 
 //use get request function from above to access get request header
@@ -294,7 +518,7 @@ $.each(moduleList, function(i, item){
         var moduleRequest = buildModuleRequest(year, semester, moduleList[i]);
         //console.log("Module Request: " + moduleRequest);
         $.getJSON(moduleRequest, function(data){
-                moduleJsonList.push(data);    
+                moduleJsonList.push(data);
                 ////console.log(moduleJsonList);
 
         });
@@ -306,19 +530,18 @@ $.each(moduleList, function(i, item){
 //run a function often to check for completion of json retrieval. Deregister it if done.
 completionChecker = setInterval(function(){
         //check if all modules are loaded
-
         if (moduleJsonList.length == moduleList.length)
 {
         window.clearInterval(completionChecker);
         var computationList = buildComputationList(moduleJsonList);
-        //console.log("Computation List: ");
-        //console.log(computationList);
+        console.log("Computation List: ");
+        console.log(computationList);
         //carry on with rest of program
         //this is the new main executing point
 
         //Commenting out to try worker approach
         //var timetablePermutationList = buildTimetablePermutationList(computationList);
-        
+        /*
         var ttplWorker = new Worker('/buildttpl');
         ttplWorker.addEventListener('message', function(e){
                 console.log("From ttplWorker, final permutation list: ");
@@ -327,12 +550,13 @@ completionChecker = setInterval(function(){
                 console.log("PROGRAM HAS ENDED!");
         },false);
         ttplWorker.postMessage(computationList);
-        
+*/
         /* Final pass during testing
            console.log("Final countdown");
            var someshit = eliminateIntermediates(timetablePermutationList);
            console.log(someshit);
            */
+
 }
 },1);
 
